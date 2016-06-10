@@ -1,41 +1,81 @@
+#! /usr/bin/python3
+
+# standard libs
 import re
 import os
 import shutil
+import argparse
 
-# for taking bibtex from cliboard
-# https://github.com/asweigart/pyperclip
+# 3rd party libs
 import pyperclip
+import yaml
 
-METADATA_DIR = os.path.expanduser('~/.autolib')
+METADATA_DIR = os.path.expanduser('~/.bibworm')
 PDF_DIR = os.path.expanduser('~/Documents/researchDocs')
-PDF_DROP_DIR = os.path.expanduser('~/.autolib-drop')
+PDF_DROP_DIR = os.path.expanduser('~/.bibworm-drop')
 
-print("reading clipboard...")
-pasted = pyperclip.paste()
-match = re.match("^@inproceedings{DBLP:(?P<id>[a-zA-Z0-9/]+),.+}$",
-                pasted.replace('\n', ''))
-if not match:
-    raise Exception("could not parse clipboard content")
-dblpid = match.group('id').split('/')[-1]
-print("DBLP id:", dblpid)
+parser = argparse.ArgumentParser()
+subparsers = parser.add_subparsers(dest='command')
+parser_add = subparsers.add_parser('add')
+parser_add.add_argument('-e', '--emulate',
+                        action = 'store_true',
+                        help="don't do any action, just print what would be done")
+parser_search = subparsers.add_parser('search')
+parser_search.add_argument('text')
 
-metadata_dir = os.path.join(METADATA_DIR, dblpid)
-if os.path.exists(metadata_dir):
-    raise Exception("'{}' already exists".format(metadata_dir))
+def add():
+    print("reading clipboard...")
+    pasted = pyperclip.paste()
+    match = re.match("^@[a-z]+{DBLP:(?P<id>[a-zA-Z0-9/]+),.+}$",
+                    pasted.replace('\n', ''))
+    if not match:
+        raise Exception("could not parse clipboard content")
+    dblpid = match.group('id').split('/')[-1]
+    print("DBLP id:", dblpid)
 
-dropped_file = os.path.join(PDF_DROP_DIR, os.listdir(PDF_DROP_DIR)[0])
+    metadata_dir = os.path.join(METADATA_DIR, dblpid)
+    if os.path.exists(metadata_dir):
+        raise Exception("'{}' already exists".format(metadata_dir))
 
-dst_file = os.path.join(PDF_DIR, dblpid.split('/')[-1] + '.pdf')
-if os.path.exists(dst_file):
-    raise Exception("'{}' already exists".format(dst_file))
+    droplist = os.listdir(PDF_DROP_DIR)
+    if len(droplist) == 0:
+        raise Exception("no PDF file in '{}'".format(PDF_DROP_DIR))
+    elif len(droplist) > 1:
+        raise Exception("Several files in '{}'".format(PDF_DROP_DIR))
+    dropped_file = os.path.join(PDF_DROP_DIR, droplist[0])
 
-# Begin Processing
+    dst_file = os.path.join(PDF_DIR, dblpid.split('/')[-1] + '.pdf')
+    if os.path.exists(dst_file):
+        raise Exception("'{}' already exists".format(dst_file))
 
-os.makedirs(metadata_dir, exist_ok=True)
+    if args.emulate:
+        print("would move '{}' to '{}'".format(os.path.basename(dropped_file), dst_file))
+    else:
+        os.makedirs(metadata_dir, exist_ok=True)
 
-shutil.move(dropped_file, dst_file)
-print("moved '{}' to '{}'".format(os.path.basename(dropped_file), dst_file))
+        shutil.move(dropped_file, dst_file)
+        print("moved '{}' to '{}'".format(os.path.basename(dropped_file), dst_file))
 
-path_to_bib = os.path.join(metadata_dir, dblpid+".bib")
-with open(path_to_bib, 'w') as file:
-    file.write(pasted)
+        path_to_bib = os.path.join(metadata_dir, dblpid+".bib")
+        with open(path_to_bib, 'w') as file:
+            file.write(pasted)
+
+
+def search(text):
+    result = dict()
+    for entry in os.listdir(METADATA_DIR):
+        path_to_bib = os.path.join(METADATA_DIR, entry, entry+'.bib')
+        with open(path_to_bib) as bibfile:
+            matching_lines = [line.strip() for line in bibfile
+                            if text.lower() in line.lower()]
+            if len(matching_lines) > 0:
+                result[entry] = matching_lines
+
+    print(yaml.dump(result, default_flow_style=False))
+
+if __name__ == '__main__':
+    args = parser.parse_args()
+    if args.command == "add":
+        add()
+    elif args.command == "search":
+        search(args.text)
