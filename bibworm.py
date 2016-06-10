@@ -5,6 +5,8 @@ import re
 import os
 import shutil
 import argparse
+import subprocess
+import sys
 
 # 3rd party libs
 import pyperclip
@@ -22,6 +24,7 @@ parser_add.add_argument('-e', '--emulate',
                         help="don't do any action, just print what would be done")
 parser_search = subparsers.add_parser('search')
 parser_search.add_argument('text')
+parser_show = subparsers.add_parser('show')
 
 def add():
     print("reading clipboard...")
@@ -73,9 +76,46 @@ def search(text):
 
     print(yaml.dump(result, default_flow_style=False))
 
+def show():
+    entries = os.listdir(METADATA_DIR)
+
+    result = dict()
+    for entry in entries:
+        path_to_bib = os.path.join(METADATA_DIR, entry, entry+'.bib')
+        with open(path_to_bib) as bibfile:
+            bib_str = bibfile.read().replace('\n','')
+
+            start = re.search('title *= *{(.+?)},', bib_str).start(1)
+            level = 1
+            i = start
+            while level > 0:
+                if bib_str[i] == '{':
+                    level += 1
+                elif bib_str[i] == '}':
+                    level -= 1
+                i += 1
+
+            tmp = bib_str[start:i-1]
+            result[entry] =  re.sub(' +',' ',tmp).replace('{','').replace('}','')
+
+    for (i,entry) in enumerate(entries):
+        print('{:2}: {}'.format(i, result[entry]))
+
+    print('-------')
+    print("chose PDF to see")
+    choice = int(input("> "))
+
+    path_to_pdf = os.path.join(PDF_DIR, entries[choice]+'.pdf')
+    print("evince",path_to_pdf)
+    subprocess.Popen(['evince',path_to_pdf])
+    sys.exit()
+
+
 if __name__ == '__main__':
     args = parser.parse_args()
     if args.command == "add":
         add()
     elif args.command == "search":
         search(args.text)
+    elif args.command == "show":
+        show()
