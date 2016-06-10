@@ -1,0 +1,2 @@
+# bibworm
+manages research bibliography
