@@ -26,6 +26,21 @@ parser_search = subparsers.add_parser('search')
 parser_search.add_argument('text')
 parser_show = subparsers.add_parser('show')
 
+def get_bibtex_tag(tagname, bib):
+    bib = bib.replace('\n','')
+    start = re.search(tagname+' *= *{(.+?)},', bib).start(1)
+    level = 1
+    i = start
+    while level > 0:
+        if bib[i] == '{':
+            level += 1
+        elif bib[i] == '}':
+            level -= 1
+        i += 1
+
+    tmp = bib[start:i-1]
+    return  re.sub(' +',' ',tmp).replace('{','').replace('}','')
+
 def add():
     print("reading clipboard...")
     pasted = pyperclip.paste()
@@ -83,27 +98,28 @@ def show():
     for entry in entries:
         path_to_bib = os.path.join(METADATA_DIR, entry, entry+'.bib')
         with open(path_to_bib) as bibfile:
-            bib_str = bibfile.read().replace('\n','')
+            bib = bibfile.read()
 
-            start = re.search('title *= *{(.+?)},', bib_str).start(1)
-            level = 1
-            i = start
-            while level > 0:
-                if bib_str[i] == '{':
-                    level += 1
-                elif bib_str[i] == '}':
-                    level -= 1
-                i += 1
+        result[entry] = {
+            'author': get_bibtex_tag('author', bib),
+            'title': get_bibtex_tag('title', bib)
+        }
 
-            tmp = bib_str[start:i-1]
-            result[entry] =  re.sub(' +',' ',tmp).replace('{','').replace('}','')
+    options = [
+        '{:2}: {}\n    "{}"'.format(
+            i, result[entry]['author'], result[entry]['title'])
+        for (i,entry) in enumerate(entries, start=1)
+    ]
 
-    for (i,entry) in enumerate(entries):
-        print('{:2}: {}'.format(i, result[entry]))
+    print("\n\n".join(options))
 
     print('-------')
     print("chose PDF to see")
-    choice = int(input("> "))
+    try:
+        choice = int(input("> "))-1
+    except KeyboardInterrupt:
+        print('exit')
+        sys.exit()
 
     path_to_pdf = os.path.join(PDF_DIR, entries[choice]+'.pdf')
     print("evince",path_to_pdf)
