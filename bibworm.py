@@ -30,6 +30,43 @@ parser_search = subparsers.add_parser('search')
 parser_search.add_argument('text')
 parser_show = subparsers.add_parser('show')
 
+def user_choice(entries):
+    print(entries_to_str(entries))
+    print('-------')
+    print("choose document and action ([pdf], bib, notes)")
+    try:
+        while True:
+            user_input = input('> ')
+            match = re.match(r'\A([0-9]+) *(pdf|bib|notes)?\Z', user_input)
+            if match:
+                choice = int(match.group(1)) - 1
+                action =  match.group(2) or 'pdf'
+                break
+            else:
+                print("*bad input*")
+    except KeyboardInterrupt:
+        print('exit')
+        sys.exit()
+
+    entry = entries[choice]
+
+    if action == 'pdf':
+        path_to_pdf = find(PDF_DIR, entry+'.pdf')
+        print("evince",path_to_pdf)
+        subprocess.Popen(['evince',path_to_pdf])
+
+    elif action == 'bib':
+        path_to_bib = os.path.join(METADATA_DIR, entry, entry+'.bib')
+        print("gedit", path_to_bib)
+        subprocess.Popen(['gedit',path_to_bib])
+
+    elif action == 'notes':
+        path_to_notes = os.path.join(METADATA_DIR, entry, entry+'.md')
+        if not os.path.exists(path_to_notes):
+            print("No notes so far - will create a new file.")
+        print("gedit", path_to_notes)
+        subprocess.Popen(['gedit',path_to_notes])
+
 def get_bibtex_tag(tagname, bib):
     bib = bib.replace('\n','')
     start = re.search(tagname+' *= *{(.+?)},', bib).start(1)
@@ -49,6 +86,25 @@ def find(root, name):
     for step in os.walk(root):
         if name in step[2]:
             return os.path.join(step[0], name)
+
+def entries_to_str(entries):
+
+    options = list()
+    for (i,entry) in enumerate(entries, start=1):
+        path_to_bib = os.path.join(METADATA_DIR, entry, entry+'.bib')
+        with open(path_to_bib) as bibfile:
+            bib = bibfile.read()
+
+        option = '{:2}: {}\n    "{}"'.format(
+            i,
+            get_bibtex_tag('author', bib),
+            get_bibtex_tag('title', bib)
+        )
+
+        options.append(option)
+
+    return "\n\n".join(options)
+
 
 def add():
     print("reading clipboard...")
@@ -98,52 +154,23 @@ def add():
 
 
 def search(text):
-    result = dict()
+    result = list()
     for entry in os.listdir(METADATA_DIR):
         path_to_bib = os.path.join(METADATA_DIR, entry, entry+'.bib')
         with open(path_to_bib) as bibfile:
             matching_lines = [line.strip() for line in bibfile
                             if text.lower() in line.lower()]
             if len(matching_lines) > 0:
-                result[entry] = matching_lines
+                result.append(entry)
 
     if result:
-        print(yaml.dump(result, default_flow_style=False))
+        user_choice(result)
 
 def show():
     entries = os.listdir(METADATA_DIR)
 
-    result = dict()
-    for entry in entries:
-        path_to_bib = os.path.join(METADATA_DIR, entry, entry+'.bib')
-        with open(path_to_bib) as bibfile:
-            bib = bibfile.read()
+    user_choice(entries)
 
-        result[entry] = {
-            'author': get_bibtex_tag('author', bib),
-            'title': get_bibtex_tag('title', bib)
-        }
-
-    options = [
-        '{:2}: {}\n    "{}"'.format(
-            i, result[entry]['author'], result[entry]['title'])
-        for (i,entry) in enumerate(entries, start=1)
-    ]
-
-    print("\n\n".join(options))
-
-    print('-------')
-    print("chose PDF to see")
-    try:
-        choice = int(input("> "))-1
-    except KeyboardInterrupt:
-        print('exit')
-        sys.exit()
-
-    path_to_pdf = find(PDF_DIR, entries[choice]+'.pdf')
-    print("evince",path_to_pdf)
-    subprocess.Popen(['evince',path_to_pdf])
-    sys.exit()
 
 
 if __name__ == '__main__':
