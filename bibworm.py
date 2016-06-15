@@ -41,6 +41,11 @@ def get_bibtex_tag(tagname, bib):
     tmp = bib[start:i-1]
     return  re.sub(' +',' ',tmp).replace('{','').replace('}','')
 
+def find(root, name):
+    for step in os.walk(root):
+        if name in step[2]:
+            return os.path.join(step[0], name)
+
 def add():
     print("reading clipboard...")
     pasted = pyperclip.paste()
@@ -121,7 +126,7 @@ def show():
         print('exit')
         sys.exit()
 
-    path_to_pdf = os.path.join(PDF_DIR, entries[choice]+'.pdf')
+    path_to_pdf = find(PDF_DIR, entries[choice]+'.pdf')
     print("evince",path_to_pdf)
     subprocess.Popen(['evince',path_to_pdf])
     sys.exit()
