@@ -56,6 +56,9 @@ def add():
     dblpid = match.group('id').split('/')[-1]
     print("DBLP id:", dblpid)
 
+    print(get_bibtex_tag('author', pasted))
+    print(get_bibtex_tag('title', pasted))
+
     metadata_dir = os.path.join(METADATA_DIR, dblpid)
     if os.path.exists(metadata_dir):
         raise Exception("'{}' already exists".format(metadata_dir))
@@ -67,17 +70,19 @@ def add():
         raise Exception("Several files in '{}'".format(PDF_DROP_DIR))
     dropped_file = os.path.join(PDF_DROP_DIR, droplist[0])
 
-    dst_file = os.path.join(PDF_DIR, dblpid.split('/')[-1] + '.pdf')
-    if os.path.exists(dst_file):
-        raise Exception("'{}' already exists".format(dst_file))
+    dst_file = dblpid.split('/')[-1] + '.pdf'
+    existing_pdf = find(PDF_DIR, dst_file)
+    if existing_pdf:
+        raise Exception("'{}' already exists as '{}'".format(dst_file, existing_pdf))
+    path_to_pdf = os.path.join(PDF_DIR, dst_file)
 
     if args.emulate:
-        print("would move '{}' to '{}'".format(os.path.basename(dropped_file), dst_file))
+        print("would move '{}' to '{}'".format(os.path.basename(dropped_file), path_to_pdf))
     else:
         os.makedirs(metadata_dir, exist_ok=True)
 
-        shutil.move(dropped_file, dst_file)
-        print("moved '{}' to '{}'".format(os.path.basename(dropped_file), dst_file))
+        shutil.move(dropped_file, path_to_pdf)
+        print("moved '{}' to '{}'".format(os.path.basename(dropped_file), path_to_pdf))
 
         path_to_bib = os.path.join(metadata_dir, dblpid+".bib")
         with open(path_to_bib, 'w') as file:
