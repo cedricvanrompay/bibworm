@@ -18,10 +18,14 @@ PDF_DROP_DIR = os.path.expanduser('~/.bibworm-drop')
 
 parser = argparse.ArgumentParser()
 subparsers = parser.add_subparsers(dest='command')
+
 parser_add = subparsers.add_parser('add')
-parser_add.add_argument('-e', '--emulate',
+parser_add.add_argument('--emulate',
                         action = 'store_true',
                         help="don't do any action, just print what would be done")
+parser_add.add_argument('--eprint',
+                        action = 'store_true')
+
 parser_search = subparsers.add_parser('search')
 parser_search.add_argument('text')
 parser_show = subparsers.add_parser('show')
@@ -87,6 +91,10 @@ def add():
         path_to_bib = os.path.join(metadata_dir, dblpid+".bib")
         with open(path_to_bib, 'w') as file:
             file.write(pasted)
+
+        path_to_metadata = os.path.join(metadata_dir, dblpid+".yaml")
+        with open(path_to_metadata, 'w') as file:
+            file.write("- eprint")
 
 
 def search(text):
