@@ -94,7 +94,8 @@ def search(text):
             if len(matching_lines) > 0:
                 result[entry] = matching_lines
 
-    print(yaml.dump(result, default_flow_style=False))
+    if result:
+        print(yaml.dump(result, default_flow_style=False))
 
 def show():
     entries = os.listdir(METADATA_DIR)
