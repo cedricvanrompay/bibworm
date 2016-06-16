@@ -28,7 +28,10 @@ parser_add.add_argument('--eprint',
 
 parser_search = subparsers.add_parser('search')
 parser_search.add_argument('text')
+
 parser_show = subparsers.add_parser('show')
+
+parser_search = subparsers.add_parser('test')
 
 def user_choice(entries):
     print(entries_to_str(entries))
@@ -181,3 +184,5 @@ if __name__ == '__main__':
         search(args.text)
     elif args.command == "show":
         show()
+    elif args.command == "test":
+        raise NotImplementedError("TODO test consistency")
