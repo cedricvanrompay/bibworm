@@ -56,19 +56,28 @@ def user_choice(entries):
     if action == 'pdf':
         path_to_pdf = find(PDF_DIR, entry+'.pdf')
         print("evince",path_to_pdf)
-        subprocess.Popen(['evince',path_to_pdf])
+        subprocess.Popen(['evince',path_to_pdf],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL
+        )
 
     elif action == 'bib':
         path_to_bib = os.path.join(METADATA_DIR, entry, entry+'.bib')
         print("gedit", path_to_bib)
-        subprocess.Popen(['gedit',path_to_bib])
+        subprocess.Popen(['gedit',path_to_bib],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL
+        )
 
     elif action == 'notes':
         path_to_notes = os.path.join(METADATA_DIR, entry, entry+'.md')
         if not os.path.exists(path_to_notes):
             print("No notes so far - will create a new file.")
         print("gedit", path_to_notes)
-        subprocess.Popen(['gedit',path_to_notes])
+        subprocess.Popen(['gedit',path_to_notes],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL
+        )
 
 def get_bibtex_tag(tagname, bib):
     bib = bib.replace('\n','')
