@@ -40,13 +40,19 @@ def user_choice(entries):
     try:
         while True:
             user_input = input('> ')
-            match = re.match(r'\A([0-9]+) *(pdf|bib|notes)?\Z', user_input)
-            if match:
-                choice = int(match.group(1)) - 1
+            match = re.match(r'\A([0-9]*) ?([a-z]*)\Z', user_input)
+            if not match:
+                print("*malformed input*")
+            else:
+                if match.group(1) == '' and len(entries) == 1:
+                    choice = 0
+                elif len(entries) > 1:
+                    choice = int(match.group(1)) - 1
+                else:
+                    raise Exception("Bad document choice '{}'".format(match.group(1)))
+
                 action =  match.group(2) or 'pdf'
                 break
-            else:
-                print("*bad input*")
     except KeyboardInterrupt:
         print('exit')
         sys.exit()
