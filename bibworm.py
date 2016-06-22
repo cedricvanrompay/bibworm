@@ -125,13 +125,26 @@ def add():
                     pasted.replace('\n', ''))
     if not match:
         raise Exception("could not parse clipboard content")
-    dblpid = match.group('id').split('/')[-1]
-    print("DBLP id:", dblpid)
+    dblpid = match.group('id')
+    paperid = dblpid.split('/')[-1]
+    print("paper id:", paperid)
 
-    print(get_bibtex_tag('author', pasted))
-    print(get_bibtex_tag('title', pasted))
+    metadata = dict()
+    if dblpid.startswith('conf'):
+        metadata['conference'] = dblpid.split('/')[1].upper()
 
-    metadata_dir = os.path.join(METADATA_DIR, dblpid)
+    year_short = int(dblpid[-2:])
+    metadata["year"] = 2000 + year_short if year_short < 50 else 1900 + year_short
+
+    if args.eprint:
+        metadata['eprint'] = None
+
+    metadata['author'] = get_bibtex_tag('author', pasted)
+    metadata['title'] = get_bibtex_tag('title', pasted)
+
+    print(yaml.dump(metadata, default_flow_style=False))
+
+    metadata_dir = os.path.join(METADATA_DIR, paperid)
     if os.path.exists(metadata_dir):
         raise Exception("'{}' already exists".format(metadata_dir))
 
@@ -142,7 +155,7 @@ def add():
         raise Exception("Several files in '{}'".format(PDF_DROP_DIR))
     dropped_file = os.path.join(PDF_DROP_DIR, droplist[0])
 
-    dst_file = dblpid.split('/')[-1] + '.pdf'
+    dst_file = paperid.split('/')[-1] + '.pdf'
     existing_pdf = find(PDF_DIR, dst_file)
     if existing_pdf:
         raise Exception("'{}' already exists as '{}'".format(dst_file, existing_pdf))
@@ -156,13 +169,13 @@ def add():
         shutil.move(dropped_file, path_to_pdf)
         print("moved '{}' to '{}'".format(os.path.basename(dropped_file), path_to_pdf))
 
-        path_to_bib = os.path.join(metadata_dir, dblpid+".bib")
+        path_to_bib = os.path.join(metadata_dir, paperid+".bib")
         with open(path_to_bib, 'w') as file:
             file.write(pasted)
 
-        path_to_metadata = os.path.join(metadata_dir, dblpid+".yaml")
+        path_to_metadata = os.path.join(metadata_dir, paperid+".yaml")
         with open(path_to_metadata, 'w') as file:
-            file.write("- eprint")
+            yaml.dump(metadata, file)
 
 
 def search(text):
