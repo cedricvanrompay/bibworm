@@ -181,12 +181,14 @@ def add():
 def search(text):
     result = list()
     for entry in os.listdir(METADATA_DIR):
-        path_to_bib = os.path.join(METADATA_DIR, entry, entry+'.bib')
-        with open(path_to_bib) as bibfile:
-            matching_lines = [line.strip() for line in bibfile
-                            if text.lower() in line.lower()]
-            if len(matching_lines) > 0:
-                result.append(entry)
+        metadata_dir = os.path.join(METADATA_DIR, entry)
+
+        path_to_metadata = os.path.join(metadata_dir, entry+".yaml")
+        with open(path_to_metadata) as file_metadata:
+            metadata = yaml.load(file_metadata)
+
+        if any([text.lower() in field for field in map(lambda x: str(x).lower(), metadata.values())]):
+            result.append(entry)
 
     if result:
         user_choice(result)
