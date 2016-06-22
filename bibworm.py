@@ -103,14 +103,21 @@ def entries_to_str(entries):
 
     options = list()
     for (i,entry) in enumerate(entries, start=1):
-        path_to_bib = os.path.join(METADATA_DIR, entry, entry+'.bib')
-        with open(path_to_bib) as bibfile:
-            bib = bibfile.read()
+        path_to_metadata = os.path.join(METADATA_DIR, entry, entry+'.yaml')
+        with open(path_to_metadata) as file_metadata:
+            metadata = yaml.load(file_metadata)
 
         option = '{:2}: {}\n    "{}"'.format(
             i,
-            get_bibtex_tag('author', bib),
-            get_bibtex_tag('title', bib)
+            metadata['author'],
+            metadata['title']
+        )
+
+        option += ''.join(
+            ['\n    {}: {}'.format(key, metadata[key])
+             for key in ['conference', 'year']
+             if key in metadata
+            ]
         )
 
         options.append(option)
