@@ -7,6 +7,7 @@ import shutil
 import argparse
 import subprocess
 import sys
+import webbrowser
 
 # 3rd party libs
 import pyperclip
@@ -36,7 +37,7 @@ parser_search = subparsers.add_parser('test')
 def user_choice(entries):
     print(entries_to_str(entries))
     print('-------')
-    print("choose document and action ([pdf], bib, notes)")
+    print("choose document and action ([pdf], bib, notes, dblp)")
     try:
         while True:
             user_input = input('> ')
@@ -84,6 +85,20 @@ def user_choice(entries):
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL
         )
+
+    elif action == 'dblp':
+
+        path_to_metadata = os.path.join(METADATA_DIR, entry, entry+'.yaml')
+        with open(path_to_metadata) as file_metadata:
+            dblpid = yaml.load(file_metadata)['dblpid']
+
+        url = 'http://dblp.uni-trier.de/rec/html/'+dblpid
+        print(url)
+        webbrowser.open(url)
+
+
+    else:
+        raise Exception("Action does not exist: '{}'".format(action))
 
 def get_bibtex_tag(tagname, bib):
     bib = bib.replace('\n','')
