@@ -2,7 +2,6 @@ import argparse
 from . import ui
 from . import db
 from . import Entry, open_pdf
-from .core import Entry
 
 parser = argparse.ArgumentParser()
 subparsers = parser.add_subparsers(dest='command')
