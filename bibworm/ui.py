@@ -3,9 +3,6 @@ import subprocess
 import os
 from itertools import chain
 
-from .db import path_to_pdf
-from . import db
-
 def parse_range_list(rngs):
     def parse_range(rng):
         parts = rng.split('-')

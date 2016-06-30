@@ -1,4 +1,4 @@
-from . import Entry
+from . import core
 
 import os
 import shutil
@@ -63,7 +63,7 @@ def search(text):
         with open(path_to_metadata(dblpid)) as file:
             metadata = yaml.load(file)
 
-        entries.append(Entry(
+        entries.append(core.Entry(
             dblpid = dblpid,
             bib = bib,
             metadata = metadata
