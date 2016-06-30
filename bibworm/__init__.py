@@ -26,9 +26,12 @@ class Entry:
                 'authors': [node.get_text()
                             for node in xml.find_all('author')
                             ],
-                'conference': xml.booktitle.get_text(),
                 'year': int(xml.year.get_text()),
             }
+            if xml.booktitle:
+                self.metadata['conference'] = xml.booktitle.get_text()
+            if xml.journal:
+                self.metadata['journal'] = xml.journal.get_text()
 
 
     def __repr__(self):
@@ -39,7 +42,8 @@ class Entry:
             self.metadata['title'],
             ' and '.join(self.metadata['authors']),
             '{} {}'.format(
-                self.metadata['conference'],
+                (self.metadata.get('conference', '')
+                or self.metadata.get('journal', '')),
                 self.metadata['year']
             )
         ])
